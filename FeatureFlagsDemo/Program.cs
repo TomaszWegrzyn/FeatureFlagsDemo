@@ -3,28 +3,26 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using FeatureFlagsDemo;
 using FeatureFlagsDemo.Api;
 using FeatureFlagsDemo.Authentication;
+using FeatureFlagsDemo.ConfigurationSources;
 using FeatureFlagsDemo.OpenIdConnect;
 using FeatureFlagsDemo.Swagger;
 using Microsoft.FeatureManagement;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddEndpointsApiExplorer();
+var builder = WebApplication.CreateBuilder();
+builder.AddConsulConfigurationSource();
 
 builder.AddOpenIdConnectOptions();
-
-builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerGenOptions>();
-builder.Services.AddSwaggerGen();
-
 builder.AddOpenIdConnectJwtBearerAuthentication();
 builder.Services.AddAuthorization();
 
-builder.Services.AddHttpContextAccessor();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerGenOptions>();
+builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpContextAccessor();
 builder.Services
     .AddFeatureManagement()    
     .AddFeatureFilter<ABTestFilter>();
-builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

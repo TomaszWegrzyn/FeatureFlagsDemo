@@ -1,4 +1,6 @@
-﻿using Microsoft.FeatureManagement;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.FeatureManagement;
 
 namespace FeatureFlagsDemo.Api;
 
@@ -9,7 +11,7 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 
 public static class Extensions
 {
-    public static RouteHandlerBuilder AddWeatherApi(this WebApplication app)
+    public static WebApplication AddWeatherApi(this WebApplication app)
     {
         var summaries1 = new[]
         {
@@ -21,7 +23,7 @@ public static class Extensions
         {
             "Ice Cube", "Fridge Mode", "Chilly", "Cool-ish", "Comfy", "Toasty", "T-shirt Time", "Roasting", "Melting", "Inferno"
         };
-        return app.MapGet("/weatherforecast", async ( IFeatureManager featureManager, ILoggerFactory LoggerFactory) =>
+        app.MapGet("/weatherforecast", async ( IFeatureManager featureManager, ILoggerFactory loggerFactory) =>
             {
                 var aiForecastEnabled = await featureManager
                     .IsEnabledAsync("AiBasedForecasting");
@@ -31,16 +33,49 @@ public static class Extensions
                 var summariesToUse = experimentalSummariesEnabled ? summaries2 : summaries1; 
                 if (aiForecastEnabled)
                 {
-                    return AmazingAiBasedForecast(summariesToUse, LoggerFactory.CreateLogger("GetWeatherForecast"));
+                    return AmazingAiBasedForecast(summariesToUse, loggerFactory.CreateLogger("GetWeatherForecast"));
                 }
                 else
                 {
-                    return LegacyForecast(summariesToUse, LoggerFactory.CreateLogger("GetWeatherForecast"));
+                    return LegacyForecast(summariesToUse, loggerFactory.CreateLogger("GetWeatherForecast"));
                 }
             })
             .WithName("GetWeatherForecast")
             .WithOpenApi()
             .RequireAuthorization();
+        
+        app.MapGet("/weatherhistory", async ([FromQuery, Range(1, 5000)] ulong pastDays, IFeatureManager featureManager, ILoggerFactory loggerFactory) =>
+            {
+                var experimentalSummariesEnabled = await featureManager
+                    .IsEnabledAsync("ExperimentalSummaries");
+                
+                var limitRetrievingReallyOldData = await featureManager
+                    .IsEnabledAsync("LimitRetrievingReallyOldData");
+                if (limitRetrievingReallyOldData)
+                {
+                    if (pastDays > 365)
+                    {
+                        return Results.BadRequest("You can only retrieve up to 365 days of weather history");
+                    }
+                }
+                
+                var summariesToUse = experimentalSummariesEnabled ? summaries2 : summaries1; 
+                return Results.Ok(
+                    Enumerable.Range(1, (int)pastDays).Select(index =>
+                        new WeatherForecast
+                        (
+                            DateOnly.FromDateTime(DateTime.Now.AddDays(-index)),
+                            Random.Shared.Next(-20, 55),
+                            summariesToUse[Random.Shared.Next(summariesToUse.Length)]
+                        ))
+                    .ToArray()
+                );
+            })
+            .WithName("GetWeatherHistory")
+            .WithOpenApi()
+            .RequireAuthorization();
+
+        return app;
     }
 
     private static WeatherForecast[] LegacyForecast(string[] summaries, ILogger logger)
