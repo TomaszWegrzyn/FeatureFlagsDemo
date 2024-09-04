@@ -20,10 +20,16 @@ builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwa
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<TrackingUserDataMiddleware>();
+
+// builder.Services.AddScopedFeatureManagement(); // Use this to make feature filters use scoped services
+
 builder.Services
-    .AddFeatureManagement()    
+    .AddFeatureManagement()
     .AddFeatureFilter<ABTestFilter>()
-    .AddFeatureFilter<PremiumFilter>();
+    .AddFeatureFilter<PremiumFilter>()
+    .WithTargeting();
 
 builder.Services.AddControllers();
 
@@ -39,6 +45,8 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddlewareForFeature<TrackingUserDataMiddleware>("TrackingUserData");
 
 app.UseHttpsRedirection();
 app.AddWeatherApi();

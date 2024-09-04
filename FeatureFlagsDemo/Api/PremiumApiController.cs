@@ -15,7 +15,7 @@ public class PremiumApiController : ControllerBase
 {
     
     [HttpGet("alerts")]
-    // [Authorize(Roles = "Premium")]
+    // [Authorize(Roles = "Premium")] would show 403 if not in the role
     public WeatherAlert[] GetPersonalWeatherAlerts()
     {
         return
