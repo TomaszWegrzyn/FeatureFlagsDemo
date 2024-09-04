@@ -11,22 +11,31 @@ public static class Extensions
 {
     public static RouteHandlerBuilder AddWeatherApi(this WebApplication app)
     {
-        var summaries = new[]
+        var summaries1 = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering",
             "Scorching"
         };
+        
+        var summaries2 = new[]
+        {
+            "Ice Cube", "Fridge Mode", "Chilly", "Cool-ish", "Comfy", "Toasty", "T-shirt Time", "Roasting", "Melting", "Inferno"
+        };
         return app.MapGet("/weatherforecast", async ( IFeatureManager featureManager, ILoggerFactory LoggerFactory) =>
             {
                 var aiForecastEnabled = await featureManager
-                    .IsEnabledAsync("AmazingAiBasedForecasting");
+                    .IsEnabledAsync("AiBasedForecasting");
+                var experimentalSummariesEnabled = await featureManager
+                    .IsEnabledAsync("ExperimentalSummaries");
+                
+                var summariesToUse = experimentalSummariesEnabled ? summaries2 : summaries1; 
                 if (aiForecastEnabled)
                 {
-                    return AmazingAiBasedForecast(summaries, LoggerFactory.CreateLogger("GetWeatherForecast"));
+                    return AmazingAiBasedForecast(summariesToUse, LoggerFactory.CreateLogger("GetWeatherForecast"));
                 }
                 else
                 {
-                    return LegacyForecast(summaries, LoggerFactory.CreateLogger("GetWeatherForecast"));
+                    return LegacyForecast(summariesToUse, LoggerFactory.CreateLogger("GetWeatherForecast"));
                 }
             })
             .WithName("GetWeatherForecast")

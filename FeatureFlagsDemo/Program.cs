@@ -21,7 +21,10 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddFeatureManagement();
+builder.Services
+    .AddFeatureManagement()    
+    .AddFeatureFilter<ABTestFilter>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
