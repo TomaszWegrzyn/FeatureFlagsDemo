@@ -22,7 +22,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 builder.Services
     .AddFeatureManagement()    
-    .AddFeatureFilter<ABTestFilter>();
+    .AddFeatureFilter<ABTestFilter>()
+    .AddFeatureFilter<PremiumFilter>();
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -33,6 +36,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUi();
 }
 
+app.MapControllers();
 app.UseAuthentication();
 app.UseAuthorization();
 
